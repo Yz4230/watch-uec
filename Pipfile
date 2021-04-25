@@ -1,0 +1,21 @@
+[scripts]
+start = "python main.py"
+
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pymongo = "*"
+bs4 = "*"
+requests = "*"
+"discord.py" = "*"
+python-dotenv = "*"
+
+[dev-packages]
+autopep8 = "*"
+rope = "*"
+
+[requires]
+python_version = "3.9"
