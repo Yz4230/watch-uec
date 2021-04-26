@@ -55,7 +55,7 @@ def get_current_website_content() -> str:
 
 def get_unified_diff(a: str, b: str) -> str:
     diff = unified_diff(a.split('\n'), b.split('\n'), n=2)
-    return '\n'.join(list(diff)[3:])
+    return '\n'.join(diff)
 
 
 def post_message(content: str) -> None:
