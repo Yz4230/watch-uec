@@ -13,9 +13,9 @@ from dotenv import load_dotenv
 load_dotenv('.env')
 
 DISCORD_WEBHOOK_URL = os.environ.get('DISCORD_WEBHOOK_URL')
-HISTORY_PATH = './history.json'
-TARGET_URL = 'https://www.uec.ac.jp/students/urgent_info/index.html'
-MESSAGE_TEMPLATE = '''\
+HISTORY_JSON_PATH = './history.json'
+WATCH_TARGET_URL = 'https://www.uec.ac.jp/students/urgent_info/index.html'
+DISCORD_MESSAGE_URL = '''\
 ページが更新されました。更新内容は次の通りです。
 ```diff
 {diff}
@@ -30,22 +30,22 @@ def get_iso_time() -> str:
 
 def load_history() -> Optional[dict]:
     try:
-        with open(HISTORY_PATH) as rf:
+        with open(HISTORY_JSON_PATH) as rf:
             return json.load(rf)
     except FileNotFoundError:
         return None
 
 
 def save_history(history_content: str) -> None:
-    with open(HISTORY_PATH, mode='w') as wf:
+    with open(HISTORY_JSON_PATH, mode='w') as wf:
         json.dump({
             'content': history_content,
             'savedAt': get_iso_time()
         }, wf, ensure_ascii=False, indent=2)
 
 
-def get_current_website_content() -> str:
-    res = requests.get(TARGET_URL)
+def fetch_current_website_content() -> str:
+    res = requests.get(WATCH_TARGET_URL)
     soup = BeautifulSoup(res.text, 'html.parser')
     text = soup.select_one('#primary').text
     text = re.sub(r'\n+', '\n', text)
@@ -53,14 +53,14 @@ def get_current_website_content() -> str:
     return text
 
 
-def get_unified_diff(a: str, b: str) -> str:
+def compute_unified_diff(a: str, b: str) -> str:
     diff = unified_diff(a.split('\n'), b.split('\n'), n=2)
     return '\n'.join(diff)
 
 
-def post_message(content: str) -> None:
+def post_discord_message(message_content: str) -> None:
     requests.post(DISCORD_WEBHOOK_URL, json={
-        'content': content,
+        'content': message_content,
         'embeds': [{
             'title': '新型コロナウイルスに係る在学生へのお知らせ│電気通信大学',
             'url': 'https://www.uec.ac.jp/students/urgent_info/index.html',
@@ -71,13 +71,13 @@ def post_message(content: str) -> None:
     })
 
 
-content = get_current_website_content()
-history_content = history['content'] if (history := load_history()) else ''
+current_website_content = fetch_current_website_content()
+last_website_content = history['content'] if (
+    history := load_history()) else ''
 
-if content != history_content:
-    save_history(content)
-    diff = get_unified_diff(history_content, content)
+if current_website_content != last_website_content:
+    save_history(current_website_content)
+    diff = compute_unified_diff(last_website_content, current_website_content)
 
-    message_content = MESSAGE_TEMPLATE.format(diff=diff)
-    print(message_content)
-    post_message(message_content)
+    discord_message_content = DISCORD_MESSAGE_URL.format(diff=diff)
+    post_discord_message(discord_message_content)
