@@ -73,9 +73,11 @@ def post_discord_message(message_content: str) -> None:
 
 current_website_content = fetch_current_website_content()
 last_website_content = history['content'] if (
-    history := load_history()) else ''
+    history := load_history()) else None
 
-if current_website_content != last_website_content:
+if last_website_content is None:
+    save_history(current_website_content)
+elif current_website_content != last_website_content:
     save_history(current_website_content)
     diff = compute_unified_diff(last_website_content, current_website_content)
 
